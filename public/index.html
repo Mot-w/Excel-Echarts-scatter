@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Excel解析生成散点图</title>
+</head>
+<body>
+    <div class="single">
+        <div class="title">上传excel文件</div>
+        <input type="file" name="singleFile" id="singleFile" onchange="changeFile(this)">
+        <button class="submit">解析</button>
+    </div>
+    <div id="main" style="width: 800px;height:600px;"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/echarts.min.js"></script>
+    <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-stat/ecStat.min.js"></script>
+    <script>
+        // 上传文件
+        $(function() {
+            $('.submit').click(function() {
+                $.ajax({
+                    url: '/upload/jiexi',
+                    type: 'GET',
+                    success: function(res) {
+                        // console.log(res.worksheet1);
+                        resolve(res.worksheet1)
+                    }
+                })
+            })
+        });
+
+        // 解析worksheet1对象
+        function resolve(obj) {
+            var data = [];
+            // var arr = []
+            var e = ['A', 'B', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+            var n = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33];
+            for(var i=0; i<n.length; i++) {
+                var row = {};
+                for(var j=0; j<e.length; j++) {
+                    var cell = e[j] + n[i];
+                    if(j == 0) {
+                        row.num = obj[cell].v
+                    }
+                    if(j == 1) {
+                        row.name = obj[cell].v
+                    }
+                    if(j == 2) {
+                        row.part = obj[cell].v
+                    }
+                    if(j == 3) {
+                        row.title = obj[cell].v
+                    }
+                    if(j == 4) {
+                        row.love = obj[cell].v
+                    }
+                    if(j == 5) {
+                        row.change = obj[cell].v
+                    }
+                    if(j == 6) {
+                        row.win = obj[cell].v
+                    }
+                    if(j == 7) {
+                        row.cultureAverage = obj[cell].v
+                    }
+                    if(j == 8) {
+                        row.performance = obj[cell].v
+                    }
+                    if(j == 9) {
+                        row.job = obj[cell].v
+                    }
+                    if(j == 10) {
+                        row.total = obj[cell].v
+                    }
+                };
+                data.push(row);
+            }
+            showExcel(data)
+        }
+        
+        function showExcel(data) {
+            var myChart = echarts.init(document.getElementById("main"));
+            var sourceData = data;
+            var currentData;
+
+            var seriesData = sourceData.map(function(item, index, array) {
+                return {
+                    name: item['name'],
+                    value: [item['job'], item['cultureAverage']]
+                }
+            })
+
+            var computeServicesAvgLine = function() {
+                let sum = 0
+                sourceData.forEach(function(item) {
+                    sum += item['job']
+                })
+                console.log(sum / sourceData.length);
+                // return sum / sourceData.length
+                return 4.4
+            }
+
+            var computeSalesAvgLine = function() {
+                let sum = 0
+                sourceData.forEach(function(item) {
+                    sum += item['cultureAverage']
+                })
+                // return sum / sourceData.length
+                return 4
+            }
+            var avg = {
+                servicesAvgLine: computeServicesAvgLine(),
+                salesAvgLine: computeSalesAvgLine()
+            }
+
+            option = {
+                title: {
+                    text: '工作文化四象限图'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    axisPointer: {
+                        show: true,
+                        type: 'cross',
+                        lineStyle: {
+                            type: 'dashed',
+                            width: 1
+                        },
+                    },
+                    formatter: function(obj) {
+                        if (obj.componentType == "series") {
+                            return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 18px;padding-bottom: 7px;margin-bottom: 7px">' +
+                                '<span>' +
+                                '姓名' +
+                                '</span>' +
+                                ' : ' + obj.name +
+                                '</div>' +
+                                '<span>' +
+                                '工作' +
+                                '</span>' +
+                                ' : ' + obj.data.value[0] + '（分）' +
+                                '<br/>' +
+                                '<span>' +
+                                '文化' +
+                                '</span>' +
+                                ' : ' + obj.data.value[1] + '（分）'
+                        }
+                    }
+                },
+                xAxis: {
+                    name: '工作',
+                    type: 'value',
+                    scale: true,
+                    // axisLabel: {
+                    //     formatter: '{value}'
+                    // },
+                    // splitLine: {
+                    //     show: false
+                    // },
+                    // axisLine: {
+                    //     lineStyle: {
+                    //         color: '#3259B8'
+                    //     }
+                    // }
+                },
+                yAxis: {
+                    name: '文化',
+                    type: 'value',
+                    scale: true,
+                    // axisLabel: {
+                    //     formatter: '{value}'
+                    // },
+                    // splitLine: {
+                    //     show: false
+                    // },
+                    // axisLine: {
+                    //     lineStyle: {
+                    //         color: '#3259B8'
+                    //     }
+                    // }
+                },
+                series: [{
+                    type: 'scatter',
+                    data: seriesData,
+                    symbolSize: 20,
+                    markLine: {
+                        silent: true,
+                        lineStyle: {
+                            normal: {
+                                color: "#626c91",
+                                type: 'solid',
+                                width: 1,
+                            },
+                            emphasis: {
+                                color: "#d9def7"
+                            }
+                        },
+                        data: [
+                            {
+                                xAxis: avg.salesAvgLine,
+                                name: '工作分平均线',
+                                itemStyle: {
+                                    normal: {
+                                        color: "#b84a58",
+                                    }
+                                }
+                            }, 
+                            {
+                                yAxis: avg.servicesAvgLine,
+                                name: '文化分平均线',
+                                itemStyle: {
+                                    normal: {
+                                        color: "#b84a58",
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    markArea: {
+                        silent: true,
+                        data: [
+                            [{
+                                // name: '改进',
+                                itemStyle: {
+                                    normal: {
+                                        color: 'transparent'
+                                    },
+                                },
+                                label: {
+                                    normal: {
+                                        show: true,
+                                        position: 'insideTopLeft',
+                                        fontStyle: 'normal',
+                                        color: "#409EFF",
+                                        fontSize: 20,
+                                    }
+                                },
+                                coord: [avg.salesAvgLine, avg.servicesAvgLine],
+                            }, {
+                                coord: [Number.MAX_VALUE, 0],
+                            }],
+                            [{
+                                // name: '淘汰',
+                                itemStyle: {
+                                    normal: {
+                                        color: 'transparent',
+                                    },
+                                },
+                                label: {
+                                    normal: {
+                                        show: true,
+                                        position: 'insideTopRight',
+                                        fontStyle: 'normal',
+                                        color: "#409EFF",
+                                        fontSize: 20,
+                                    }
+                                },
+                                coord: [0, 0],
+                            }, {
+                                coord: [avg.salesAvgLine, avg.servicesAvgLine],
+                            }],
+                            [{
+                                // name: '保持',
+                                itemStyle: {
+                                    normal: {
+                                        color: 'transparent',
+                                    },
+                                },
+                                label: {
+                                    normal: {
+                                        show: true,
+                                        position: 'insideBottomLeft',
+                                        fontStyle: 'normal',
+                                        color: "#409EFF",
+                                        fontSize: 20,
+                                    }
+                                },
+                                coord: [avg.salesAvgLine, avg.servicesAvgLine],
+                            }, {
+                                coord: [Number.MAX_VALUE, Number.MAX_VALUE],
+                            }],
+                            [{
+                                // name: '激励',
+                                itemStyle: {
+                                    normal: {
+                                        color: 'transparent',
+                                    },
+                                },
+                                label: {
+                                    normal: {
+                                        show: true,
+                                        position: 'insideBottomRight',
+                                        fontStyle: 'normal',
+                                        color: "#409EFF",
+                                        fontSize: 20,
+                                    }
+                                },
+                                coord: [0, Number.MAX_VALUE],
+                            }, {
+                                coord: [avg.salesAvgLine, avg.servicesAvgLine],
+                            }],
+                        ]
+                    }
+                }]
+            };
+            myChart.on('mouseover', function(params) {
+                currentData = params.data;
+            })
+            myChart.setOption(option, true); 
+        }
+    </script>
+</body>
+</html>
